@@ -5,6 +5,7 @@ Vojax makes asynchronous network (ajax) calls on web.
 
 ```
 let instance = Vojax.getInstance();
+
 instance.addToRequestQueue({
     url: "https://swapi.co/api/people/2",
     method: "get",
