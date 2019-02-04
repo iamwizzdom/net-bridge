@@ -26,18 +26,22 @@ Vojax = (function() {
             return serial;
         };
         let in_request_queue = (request) => {
-            let requestQueue = this.getRequestQueue();
-            for (let x = 0; x < requestQueue.length; x++) {
-                let queue = requestQueue[x];
+            let requestQueue = this.getRequestQueue(),
+                size = requestQueue.length;
+            if (size <= 0) return false;
+            for (let x = 0; x < size; x++) {
+                let queue = requestQueue[x], count = 0,
+                    keys = Object.keys(queue).length;
                 for (let n in queue) {
                     if (queue.hasOwnProperty(n) &&
                         request.hasOwnProperty(n))
-                        if (queue[n] !== request[n]) return false;
+                        if (queue[n] === request[n]) count++;
                 }
+                if (count === keys) return true;
             }
-            return true;
+            return false;
         };
-        
+
         let requestQueue = { queue: [] };
 
         this.getRequestQueue = () => requestQueue.queue;
@@ -145,11 +149,11 @@ Vojax = (function() {
 
                     xhttp.setRequestHeader("Content-type", (
                         (is_boolean(request.contentType) && request.contentType !== false ?
-                            "application/x-www-form-urlencoded" : (
-                                is_string(request.contentType) ?
-                                request.contentType :
-                                "application/x-www-form-urlencoded"
-                            )
+                                "application/x-www-form-urlencoded" : (
+                                    is_string(request.contentType) ?
+                                        request.contentType :
+                                        "application/x-www-form-urlencoded"
+                                )
                         )
                     ));
 
