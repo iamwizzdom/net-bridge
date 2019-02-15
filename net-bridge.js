@@ -1,22 +1,85 @@
+/**
+ * Name: NetBridge
+ * Description: NetBridge is used for making asynchronous network (ajax) calls on web applications.
+ * Author: Wisdom Emenike
+ * License: MIT
+ * Version: 1.1.0
+ * GitHub: https://github.com/iamwizzdom/net-bridge
+ */
+
 NetBridge = (function() {
 
     let NetBridge = function () {
 
         let permitNetwork = true;
+
+        /**
+         * return boolean
+         */
         let getPermitNetwork = () => permitNetwork;
+
+        /**
+         *
+         * @param status
+         */
         let setPermitNetwork = (status) => {
             if (isBoolean(status)) permitNetwork = status;
         };
 
+        /**
+         *
+         * @param variable
+         */
         let isUndefined = (variable) => typeof variable === "undefined";
+
+        /**
+         *
+         * @param variable
+         */
         let isObject = (variable) => typeof variable === "object";
+
+        /**
+         *
+         * @param variable
+         */
         let isFunction = (variable) => typeof variable === "function";
+
+        /**
+         *
+         * @param variable
+         */
         let isBoolean = (variable) => typeof variable === "boolean";
+
+        /**
+         *
+         * @param variable
+         */
         let isString = (variable) => typeof variable === "string";
+
+        /**
+         *
+         * @param variable
+         */
         let isNumeric = (variable) => isNaN(variable) === false;
+
+        /**
+         *
+         * @param variable
+         */
         let isEmpty = (variable) => variable === false || variable === null ||
             variable.toString() === "0" || variable.toString() === "" || variable.toString() === " ";
+
+        /**
+         *
+         * @param variable
+         */
         let getType = (variable) => typeof variable;
+
+        /**
+         *
+         * @param object
+         * @returns {string}
+         */
         let serialize = (object) => {
             let serial = "", x;
             for (x in object) {
@@ -25,6 +88,12 @@ NetBridge = (function() {
             }
             return serial;
         };
+
+        /**
+         *
+         * @param request
+         * @returns {boolean}
+         */
         let isInRequestQueue = (request) => {
             let requestQueue = this.getRequestQueue(),
                 size = requestQueue.length;
@@ -44,8 +113,15 @@ NetBridge = (function() {
 
         let requestQueue = {queue: []};
 
+        /**
+         * return json
+         */
         this.getRequestQueue = () => requestQueue.queue;
 
+        /**
+         *
+         * @param queue
+         */
         this.addToRequestQueue = (queue) => {
 
             let size = this.getRequestQueue().length, network = getPermitNetwork();
@@ -148,7 +224,7 @@ NetBridge = (function() {
 
                     if (isFunction(request.xhr)) request.xhr();
 
-                    xhttp.setRequestHeader("Content-type", (
+                    xhttp.setRequestHeader("Content-Type", (
                         (isBoolean(request.contentType) && request.contentType !== false ?
                                 "application/x-www-form-urlencoded" : (
                                     isString(request.contentType) ?
@@ -179,6 +255,9 @@ NetBridge = (function() {
 
     let mInstance = null;
 
+    /**
+     * return singleton
+     */
     NetBridge.getInstance = () => (mInstance instanceof NetBridge ?
         mInstance : (mInstance = new NetBridge()));
 
