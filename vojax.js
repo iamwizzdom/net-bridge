@@ -1,6 +1,6 @@
-Vojax = (function() {
+NetBridge = (function() {
 
-    Vojax = function() {
+    let NetBridge = function () {
 
         let permitNetwork = true;
         let getPermitNetwork = () => permitNetwork;
@@ -42,7 +42,7 @@ Vojax = (function() {
             return false;
         };
 
-        let requestQueue = { queue: [] };
+        let requestQueue = {queue: []};
 
         this.getRequestQueue = () => requestQueue.queue;
 
@@ -56,7 +56,8 @@ Vojax = (function() {
             if (!is_string(queue.method)) throw "vojax expects the 'method' attribute to be a string, but got " + get_type(queue.method);
             if (in_request_queue(queue)) return;
             if (!network && is_function(queue.queue)) queue.queue();
-            push(queue); if (size <= 0) sendRequest();
+            push(queue);
+            if (size <= 0) sendRequest();
 
         };
 
@@ -91,7 +92,7 @@ Vojax = (function() {
                         };
                     }
 
-                    xhttp.onreadystatechange = function() {
+                    xhttp.onreadystatechange = function () {
 
                         let state = false,
                             status = false;
@@ -178,9 +179,9 @@ Vojax = (function() {
 
     let mInstance = null;
 
-    Vojax.getInstance = () => (mInstance instanceof Vojax ?
-        mInstance : (mInstance = new Vojax()));
+    NetBridge.getInstance = () => (mInstance instanceof NetBridge ?
+        mInstance : (mInstance = new NetBridge()));
 
-    return Vojax;
+    return NetBridge;
 
 }());
