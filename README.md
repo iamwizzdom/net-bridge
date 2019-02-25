@@ -11,7 +11,7 @@ instance.addToRequestQueue({
     method: "post",
     data: {
         userID: 2
-    }
+    },
     queue: function () {
         console.log('comment', 'I am a post request and am waiting');
     },
