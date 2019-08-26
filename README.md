@@ -37,5 +37,5 @@ instance.addToRequestQueue({
 });
 ```
 
-> `NetBridge.getInstance()` returns a singleton from which you can use the  addToRequestQueue()` method
+> `NetBridge.getInstance()` returns a singleton from which you can use the `addToRequestQueue()` method
 to add requests that are to be dished out asynchronously.
