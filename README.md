@@ -1,7 +1,6 @@
-# NetBridge
-NetBridge is used for making asynchronous network (ajax) calls on web applications.
+# NetBridge - NetBridge is used for making asynchronous network (ajax) calls on web applications.
 
-#usage
+<h2>Usage</h2>
 
 ```
 let instance = NetBridge.getInstance();
@@ -38,5 +37,5 @@ instance.addToRequestQueue({
 });
 ```
 
-NetBridge.getInstance() returns a singleton from which you can use the 'addToRequestQueue()' method
+> `NetBridge.getInstance()` returns a singleton from which you can use the  addToRequestQueue()` method
 to add requests that are to be dished out asynchronously.
