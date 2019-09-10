@@ -3,7 +3,7 @@
  * Description: NetBridge is used for making asynchronous network (ajax) calls on web applications.
  * Author: Wisdom Emenike
  * License: MIT
- * Version: 1.1.0
+ * Version: 1.1.1
  * GitHub: https://github.com/iamwizzdom/net-bridge
  */
 
@@ -178,15 +178,37 @@ NetBridge = (function() {
                             if (isFunction(request.error)) request.error(xhttp, this.status, this.statusText);
                         }
 
+                        if (isFunction(request['responseHeaders']) &&
+                            this.readyState === this.HEADERS_RECEIVED) {
+
+                            let headers = xhttp.getAllResponseHeaders();
+
+                            let headerArray = headers.trim().split(/[\r\n]+/);
+
+                            let headerMap = {};
+                            headerArray.forEach(function (line) {
+                                let parts = line.split(': ');
+                                let header = parts.shift();
+                                headerMap[header] = parts.join(': ');
+                            });
+
+                            request['responseHeaders'](headerMap);
+                        }
+
                         if (this.readyState === 4) state = true;
 
-                        if (this.status === 403) {
-                            console.error("NetBridge error: request forbidden (URL:: " + request.url + ")");
+                        if (state === true && this.status === 403) {
+                            console.error("NetBridge error: Request Forbidden (URL:: " + request.url + ")");
                             if (isFunction(request.error)) request.error(xhttp, this.status, this.statusText);
                         }
 
-                        if (this.status === 404) {
-                            console.error("NetBridge error: not found (URL:: " + request.url + ")");
+                        if (state === true && this.status === 404) {
+                            console.error("NetBridge error: Not Found (URL:: " + request.url + ")");
+                            if (isFunction(request.error)) request.error(xhttp, this.status, this.statusText);
+                        }
+
+                        if (state === true && this.status === 500) {
+                            console.error("NetBridge error: Internal Server Error (URL:: " + request.url + ")");
                             if (isFunction(request.error)) request.error(xhttp, this.status, this.statusText);
                         }
 
@@ -200,39 +222,48 @@ NetBridge = (function() {
 
                     };
 
-                    xhttp.onloadend = () => {
+                    xhttp.onloadend = function () {
                         setPermitNetwork(true);
                         // noinspection Annotator
                         if (isBoolean(request['persist']) && request['persist'] === true) push(request);
                         let _tm = setTimeout(() => {
-                            let queue = this.getRequestQueue();
                             if (queue.length > 0) send(shift());
                             clearTimeout(_tm);
                         }, 100);
                     };
+
+                    if (isNumeric(request.timeout)) xhttp.timeout = parseInt(request.timeout);
+
+                    if (isFunction(request.ontimeout)) xhttp.ontimeout = request.ontimeout;
+
+                    if (isFunction(request.error)) xhttp.onerror = request.error;
+
+                    if (isFunction(request.abort)) xhttp.onabort = request.abort;
+
+                    if (isFunction(request.cancel)) xhttp.oncancel = request.cancel;
 
                     xhttp.msCaching = (isBoolean(request.cache) ? request.cache : false);
 
                     // noinspection Annotator
                     xhttp.open(
                         request.method,
-                        request.url,
+                        (request.method.toUpperCase() === 'GET' && !isUndefined(request.data)) ?
+                            encodeURI((request.url + "?" + serialize(request.data))) : request.url,
                         (isBoolean(request.async) ? request.async : true),
                         (isString(request['username']) ? request['username'] : ""),
                         (isString(request.password) ? request.password : ""),
                     );
 
-                    if (isFunction(request.xhr)) request.xhr();
+                    if (isFunction(request.xhr)) request.xhr(xhttp);
 
-                    xhttp.setRequestHeader("Content-Type", (
-                        (isBoolean(request.contentType) && request.contentType !== false ?
-                                "application/x-www-form-urlencoded" : (
-                                    isString(request.contentType) ?
-                                        request.contentType :
-                                        "application/x-www-form-urlencoded"
-                                )
-                        )
-                    ));
+                    if (isBoolean(request.contentType) && request.contentType === false) {
+                        xhttp.withCredentials = true;
+                    } else {
+                        xhttp.setRequestHeader("Content-Type", isString(request.contentType) ?
+                            request.contentType : "application/x-www-form-urlencoded; charset=UTF-8");
+                    }
+
+                    xhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 
                     if (isObject(request.headers)) {
                         for (let x in request.headers) {
@@ -241,11 +272,8 @@ NetBridge = (function() {
                         }
                     }
 
-                    if (isNumeric(request.timeout)) xhttp.timeout = parseInt(request.timeout);
-
-                    if (isFunction(request.ontimeout)) xhttp.ontimeout = request.ontimeout;
-
-                    xhttp.send((isBoolean(request.processData) && request.processData === false ? request.data : serialize(request.data)));
+                    xhttp.send((isBoolean(request.processData) &&
+                    request.processData === false ? request.data : serialize(request.data)));
 
                 };
 
@@ -256,7 +284,7 @@ NetBridge = (function() {
     let mInstance = null;
 
     /**
-     * return singleton
+     * return NetBridge
      */
     NetBridge.getInstance = () => (mInstance instanceof NetBridge ?
         mInstance : (mInstance = new NetBridge()));
