@@ -1,4 +1,4 @@
-# NetBridge - NetBridge is used for making asynchronous network (ajax) calls on web applications.
+# NetBridge - NetBridge is used for making synchronous network (ajax) calls on web applications.
 
 <h2>Usage</h2>
 
