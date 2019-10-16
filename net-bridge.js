@@ -3,7 +3,7 @@
  * Description: NetBridge is used for making asynchronous network (ajax) calls on web applications.
  * Author: Wisdom Emenike
  * License: MIT
- * Version: 1.2
+ * Version: 1.3
  * GitHub: https://github.com/iamwizzdom/net-bridge
  */
 
@@ -152,7 +152,7 @@ NetBridge = (function() {
                         if (__tm !== null) clearTimeout(__tm);
                         __tm = setTimeout(() => {
                             send(request);
-                        }, 100);
+                        }, 500);
                         return;
                     }
 
@@ -229,7 +229,7 @@ NetBridge = (function() {
                         let _tm = setTimeout(() => {
                             if (queue.length > 0) send(shift());
                             clearTimeout(_tm);
-                        }, 100);
+                        }, 500);
                     };
 
                     if (isNumeric(request.timeout)) xhttp.timeout = parseInt(request.timeout);
@@ -265,12 +265,16 @@ NetBridge = (function() {
 
                     xhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 
+                    if (isFunction(request.headers)) request.headers = request.headers();
+
                     if (isObject(request.headers)) {
                         for (let x in request.headers) {
                             if (request.headers.hasOwnProperty(x))
                                 xhttp.setRequestHeader(x, request.headers[x]);
                         }
                     }
+
+                    if (isFunction(request.data)) request.data = request.data();
 
                     xhttp.send((isBoolean(request.processData) &&
                     request.processData === false ? request.data : serialize(request.data)));
