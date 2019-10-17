@@ -170,12 +170,11 @@ NetBridge = (function() {
 
                     xhttp.onreadystatechange = function () {
 
-                        let state = false,
-                            status = false;
+                        let state = false, status = false;
 
                         if (this.readyState === 0) {
                             console.error("NetBridge error: request not initialized (URL:: " + request.url + ")");
-                            if (isFunction(request.error)) request.error(xhttp, this.status, this.statusText);
+                            if (isFunction(request.error)) request.error(this.responseText, xhttp, this.status, this.statusText);
                         }
 
                         if (isFunction(request['responseHeaders']) &&
@@ -197,22 +196,10 @@ NetBridge = (function() {
 
                         if (this.readyState === 4) state = true;
 
-                        if (state === true && this.status === 403) {
-                            console.error("NetBridge error: Request Forbidden (URL:: " + request.url + ")");
-                            if (isFunction(request.error)) request.error(xhttp, this.status, this.statusText);
-                        }
-
-                        if (state === true && this.status === 404) {
-                            console.error("NetBridge error: Not Found (URL:: " + request.url + ")");
-                            if (isFunction(request.error)) request.error(xhttp, this.status, this.statusText);
-                        }
-
-                        if (state === true && this.status === 500) {
-                            console.error("NetBridge error: Internal Server Error (URL:: " + request.url + ")");
-                            if (isFunction(request.error)) request.error(xhttp, this.status, this.statusText);
-                        }
-
-                        if (this.status === 200) status = true;
+                        if (state === true && this.status !== 200) {
+                            console.error("NetBridge error: " + this.statusText + " - " + this.status + " (URL:: " + request.url + ")");
+                            if (isFunction(request.error)) request.error(this.responseText, xhttp, this.status, this.statusText);
+                        } else status = true;
 
                         if (state === true && status === true) {
                             if (isFunction(request.success)) request.success(this.responseText, this.status, xhttp);
@@ -224,7 +211,6 @@ NetBridge = (function() {
 
                     xhttp.onloadend = function () {
                         setPermitNetwork(true);
-                        // noinspection Annotator
                         if (isBoolean(request['persist']) && request['persist'] === true) push(request);
                         let _tm = setTimeout(() => {
                             if (queue.length > 0) send(shift());
@@ -244,7 +230,6 @@ NetBridge = (function() {
 
                     xhttp.msCaching = (isBoolean(request.cache) ? request.cache : false);
 
-                    // noinspection Annotator
                     xhttp.open(
                         request.method,
                         (request.method.toUpperCase() === 'GET' && !isUndefined(request.data)) ?
