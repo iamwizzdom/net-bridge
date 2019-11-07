@@ -7,8 +7,16 @@
  * GitHub: https://github.com/iamwizzdom/net-bridge
  */
 
+/**
+ *
+ * @type {NetBridge}
+ */
 NetBridge = (function() {
 
+    /**
+     *
+     * @constructor
+     */
     let NetBridge = function () {
 
         let permitNetwork = true;
@@ -16,13 +24,13 @@ NetBridge = (function() {
         /**
          * return boolean
          */
-        let getPermitNetwork = () => permitNetwork;
+        const getPermitNetwork = () => permitNetwork;
 
         /**
          *
          * @param status
          */
-        let setPermitNetwork = (status) => {
+        const setPermitNetwork = (status) => {
             if (isBoolean(status)) permitNetwork = status;
         };
 
@@ -30,57 +38,57 @@ NetBridge = (function() {
          *
          * @param variable
          */
-        let isUndefined = (variable) => typeof variable === "undefined";
+        const isUndefined = (variable) => typeof variable === "undefined";
 
         /**
          *
          * @param variable
          */
-        let isObject = (variable) => typeof variable === "object";
+        const isObject = (variable) => typeof variable === "object";
 
         /**
          *
          * @param variable
          */
-        let isFunction = (variable) => typeof variable === "function";
+        const isFunction = (variable) => typeof variable === "function";
 
         /**
          *
          * @param variable
          */
-        let isBoolean = (variable) => typeof variable === "boolean";
+        const isBoolean = (variable) => typeof variable === "boolean";
 
         /**
          *
          * @param variable
          */
-        let isString = (variable) => typeof variable === "string";
+        const isString = (variable) => typeof variable === "string";
 
         /**
          *
          * @param variable
          */
-        let isNumeric = (variable) => isNaN(variable) === false;
+        const isNumeric = (variable) => isNaN(variable) === false;
 
         /**
          *
          * @param variable
          */
-        let isEmpty = (variable) => variable === false || variable === null ||
+        const isEmpty = (variable) => variable === false || variable === null ||
             variable.toString() === "0" || variable.toString() === "" || variable.toString() === " ";
 
         /**
          *
          * @param variable
          */
-        let getType = (variable) => typeof variable;
+        const getType = (variable) => typeof variable;
 
         /**
          *
          * @param object
          * @returns {string}
          */
-        let serialize = (object) => {
+        const serialize = (object) => {
             let serial = "", x;
             for (x in object) {
                 if (object.hasOwnProperty(x))
@@ -94,7 +102,7 @@ NetBridge = (function() {
          * @param request
          * @returns {boolean}
          */
-        let isInRequestQueue = (request) => {
+        const isInRequestQueue = (request) => {
             let requestQueue = this.getRequestQueue(),
                 size = requestQueue.length;
             if (size <= 0) return false;
@@ -111,36 +119,32 @@ NetBridge = (function() {
             return false;
         };
 
+        /**
+         *
+         * @type {{queue: Array}}
+         */
         let requestQueue = {queue: []};
 
         /**
-         * return json
+         *
+         * @return {*}
          */
-        this.getRequestQueue = () => requestQueue.queue;
+        const shift = () => requestQueue.queue.shift();
 
         /**
          *
          * @param queue
+         * @return {number}
          */
-        this.addToRequestQueue = (queue) => {
+        const push = (queue) => requestQueue.queue.push(queue);
 
-            let size = this.getRequestQueue().length, network = getPermitNetwork();
-            if (!isObject(queue)) throw "NetBridge expects an object from its parameter, but got " + getType(queue);
-            if (isUndefined(queue.url)) throw "NetBridge expects a 'url' attribute from the passed object";
-            if (!isString(queue.url)) throw "NetBridge expects the 'url' attribute to be a string, but got " + getType(queue.url);
-            if (isUndefined(queue.method)) throw "NetBridge expects a 'method' attribute from the passed object";
-            if (!isString(queue.method)) throw "NetBridge expects the 'method' attribute to be a string, but got " + getType(queue.method);
-            if (isInRequestQueue(queue)) return;
-            if (!network && isFunction(queue.queue)) queue.queue();
-            push(queue);
-            if (size <= 0) sendRequest();
+        /**
+         *
+         * @return {Array}
+         */
+        this.getRequestQueue = () => requestQueue.queue;
 
-        };
-
-        let shift = () => requestQueue.queue.shift();
-        let push = (queue) => requestQueue.queue.push(queue);
-
-        let sendRequest = () => {
+        const sendRequest = () => {
 
             let queue = this.getRequestQueue(),
 
@@ -267,13 +271,37 @@ NetBridge = (function() {
                 };
 
             if (queue.length > 0) send(shift());
-        }
+        };
+
+        /**
+         *
+         * @param queue
+         */
+        this.addToRequestQueue = (queue) => {
+
+            let size = this.getRequestQueue().length, network = getPermitNetwork();
+            if (!isObject(queue)) throw "NetBridge expects an object from its parameter, but got " + getType(queue);
+            if (isUndefined(queue.url)) throw "NetBridge expects a 'url' attribute from the passed object";
+            if (!isString(queue.url)) throw "NetBridge expects the 'url' attribute to be a string, but got " + getType(queue.url);
+            if (isUndefined(queue.method)) throw "NetBridge expects a 'method' attribute from the passed object";
+            if (!isString(queue.method)) throw "NetBridge expects the 'method' attribute to be a string, but got " + getType(queue.method);
+            if (isInRequestQueue(queue)) return;
+            if (!network && isFunction(queue.queue)) queue.queue();
+            push(queue);
+            if (size <= 0) sendRequest();
+
+        };
     };
 
+    /**
+     *
+     * @type {NetBridge}
+     */
     let mInstance = null;
 
     /**
-     * return NetBridge
+     *
+     * @return {NetBridge}
      */
     NetBridge.getInstance = () => (mInstance instanceof NetBridge ?
         mInstance : (mInstance = new NetBridge()));
