@@ -89,12 +89,14 @@ NetBridge = (function() {
          * @returns {string}
          */
         const serialize = (object) => {
-            let serial = "", x;
+            let list = [], x;
             for (x in object) {
-                if (object.hasOwnProperty(x))
-                    serial += (!isEmpty(serial) ? "&" : "") + x + "=" + object[x];
+                if (object.hasOwnProperty(x)) {
+                    list[list.length] = encodeURIComponent(x) + "=" + encodeURIComponent(
+                        null == object[x] ? "" : object[x]);
+                }
             }
-            return serial;
+            return list.join('&');
         };
 
         /**
@@ -219,7 +221,7 @@ NetBridge = (function() {
                         let _tm = setTimeout(() => {
                             if (queue.length > 0) send(shift());
                             clearTimeout(_tm);
-                        }, 500);
+                        }, 1000);
                     };
 
                     if (isNumeric(request.timeout)) xhttp.timeout = parseInt(request.timeout);
