@@ -1,8 +1,0 @@
-{
-  "name": "@iamwizzdom/net-bridge",
-  "version": "1.3.0",
-  "dependencies": {
-    
-  },
-  "publishConfig": { "registry": "https://npm.pkg.github.com/" }
-}
