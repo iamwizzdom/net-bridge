@@ -11,7 +11,7 @@
  *
  * @type {NetBridge}
  */
-NetBridge = (function() {
+NetBridge = (function () {
 
     /**
      *
@@ -20,6 +20,8 @@ NetBridge = (function() {
     let NetBridge = function () {
 
         let permitNetwork = true;
+
+        let dispatchIndex = 0;
 
         /**
          * return boolean
@@ -36,19 +38,43 @@ NetBridge = (function() {
 
         /**
          *
+         * @return {number}
+         */
+        const getLastDispatchedIndex = () => dispatchIndex;
+
+        /**
+         *
+         * @param index
+         */
+        const setNextDispatchIndex = (index) => {
+            dispatchIndex = index;
+        };
+
+        /**
+         *
          * @param variable
+         * @return {boolean}
          */
         const isUndefined = (variable) => typeof variable === "undefined";
 
         /**
          *
          * @param variable
+         * @return {boolean}
          */
-        const isObject = (variable) => typeof variable === "object";
+        const isArray = (variable) => Array.isArray(variable);
 
         /**
          *
          * @param variable
+         * @return {boolean}
+         */
+        const isObject = (variable) => variable !== null && typeof variable === "object";
+
+        /**
+         *
+         * @param variable
+         * @return {boolean}
          */
         const isFunction = (variable) => typeof variable === "function";
 
@@ -61,6 +87,7 @@ NetBridge = (function() {
         /**
          *
          * @param variable
+         * @return {boolean}
          */
         const isString = (variable) => typeof variable === "string";
 
@@ -73,6 +100,7 @@ NetBridge = (function() {
         /**
          *
          * @param variable
+         * @return {boolean}
          */
         const isEmpty = (variable) => variable === false || variable === null ||
             variable.toString() === "0" || variable.toString() === "" || variable.toString() === " ";
@@ -80,13 +108,14 @@ NetBridge = (function() {
         /**
          *
          * @param variable
+         * @return {"undefined"|"object"|"boolean"|"number"|"string"|"function"|"symbol"|"bigint"}
          */
         const getType = (variable) => typeof variable;
 
         /**
          *
          * @param object
-         * @returns {string}
+         * @return {string}
          */
         const serialize = (object) => {
             let list = [], x;
@@ -107,7 +136,6 @@ NetBridge = (function() {
         const isInRequestQueue = (request) => {
             let requestQueue = this.getRequestQueue(),
                 size = requestQueue.length;
-            if (size <= 0) return false;
             for (let x = 0; x < size; x++) {
                 let queue = requestQueue[x], count = 0,
                     keys = Object.keys(queue).length;
@@ -123,15 +151,67 @@ NetBridge = (function() {
 
         /**
          *
-         * @type {{queue: Array}}
+         * @param id
+         * @return {boolean}
          */
-        let requestQueue = {queue: []};
+        const isKeyInRequestQueue = (id) => {
+            let requestQueue = this.getRequestQueue(),
+                size = requestQueue.length;
+            for (let x = 0; x < size; x++) {
+                let queue = requestQueue[x];
+                if (queue.id === id) return true;
+            }
+            return false;
+        };
 
         /**
          *
-         * @return {*}
+         * @constructor
          */
-        const shift = () => requestQueue.queue.shift();
+        let Finalize = function() {
+
+            /**
+             *
+             * @type {{always: null, fail: null, done: null}}
+             */
+            let callbacks = {done: null, fail: null, always: null};
+
+            /**
+             *
+             * @param callback
+             */
+            this.done = (callback) => {
+                callbacks.done = callback;
+            };
+
+            /**
+             *
+             * @param callback
+             */
+            this.fail = (callback) => {
+                callbacks.fail = callback;
+            };
+
+            /**
+             *
+             * @param callback
+             */
+            this.always = (callback) => {
+                callbacks.always = callback;
+            };
+
+            /**
+             *
+             * @return {{always: null, fail: null, done: null}}
+             */
+            this.getCallbacks = () => callbacks;
+        };
+
+        /**
+         *
+         * @type {{finally: null, queue: Array, responseStack: {}}}
+         */
+        let requestQueue = {queue: [], finally: null, responseStack: {}};
 
         /**
          *
@@ -142,51 +222,80 @@ NetBridge = (function() {
 
         /**
          *
+         * @param key
+         * @param response
+         */
+        const pushToResponseStack = (key, response) => {
+            if (isUndefined(requestQueue.responseStack[key])) {
+                requestQueue.responseStack[key] = response;
+            } else if (isArray(requestQueue.responseStack[key])) {
+                requestQueue.responseStack[key].push(response);
+            } else {
+                let resp = requestQueue.responseStack[key];
+                requestQueue.responseStack[key] = [];
+                requestQueue.responseStack[key].push(resp);
+                requestQueue.responseStack[key].push(response);
+            }
+        };
+
+        /**
+         *
          * @return {Array}
          */
         this.getRequestQueue = () => requestQueue.queue;
 
-        const sendRequest = () => {
+        const startDispatcher = (request = null) => {
 
             let queue = this.getRequestQueue(),
 
-                __tm = null,
+                timer = null,
 
-                send = (request) => {
+                dispatch = (request) => {
 
                     if (!getPermitNetwork()) {
-                        if (__tm !== null) clearTimeout(__tm);
-                        __tm = setTimeout(() => {
-                            send(request);
+                        if (timer !== null) clearTimeout(timer);
+                        timer = setTimeout(() => {
+                            dispatch(request);
                         }, 500);
                         return;
                     }
 
                     setPermitNetwork(false);
 
-                    let xhttp = new XMLHttpRequest();
+                    let lastIndex = getLastDispatchedIndex();
+                    if (queue.length > lastIndex) setNextDispatchIndex((lastIndex + 1));
 
-                    // noinspection Annotator
+                    let xhr = new XMLHttpRequest();
+
                     if (isFunction(request['beforeSend'])) {
-                        xhttp.onloadstart = () => {
-                            // noinspection Annotator
-                            request['beforeSend'](xhttp);
+                        xhr.onloadstart = () => {
+                            request['beforeSend'](xhr);
                         };
                     }
 
-                    xhttp.onreadystatechange = function () {
+                    xhr.onreadystatechange = function () {
 
                         let state = false, status = false;
 
                         if (this.readyState === 0) {
                             console.error("NetBridge error: request not initialized (URL:: " + request.url + ")");
-                            if (isFunction(request.error)) request.error(this.responseText, xhttp, this.status, this.statusText);
+                            if (isFunction(request.error)) request.error(this.responseText, xhr, this.status, this.statusText);
+
+                            pushToResponseStack(request.id, {
+                                url: request.url,
+                                method: request.method,
+                                response: null,
+                                message: 'not initialized',
+                                xhr: xhr,
+                                status: null,
+                                statusText: null
+                            });
                         }
 
                         if (isFunction(request['responseHeaders']) &&
                             this.readyState === this.HEADERS_RECEIVED) {
 
-                            let headers = xhttp.getAllResponseHeaders();
+                            let headers = xhr.getAllResponseHeaders();
 
                             let headerArray = headers.trim().split(/[\r\n]+/);
 
@@ -203,40 +312,132 @@ NetBridge = (function() {
                         if (this.readyState === 4) state = true;
 
                         if (state === true && this.status !== 200) {
+
                             console.error("NetBridge error: " + this.statusText + " - " + this.status + " (URL:: " + request.url + ")");
-                            if (isFunction(request.error)) request.error(this.responseText, xhttp, this.status, this.statusText);
+                            if (isFunction(request.error)) request.error(this.responseText, xhr, this.status, this.statusText);
+                            let fail = request.finalize.getCallbacks().fail;
+                            if (isFunction(fail)) fail(this.responseText, xhr, this.status, this.statusText);
+
+                            pushToResponseStack(request.id, {
+                                url: request.url,
+                                method: request.method,
+                                response: this.responseText,
+                                message: 'failed',
+                                xhr: xhr,
+                                status: this.status,
+                                statusText: this.statusText
+                            });
+
                         } else status = true;
 
                         if (state === true && status === true) {
-                            if (isFunction(request.success)) request.success(this.responseText, this.status, xhttp);
+
+                            if (isFunction(request.success)) request.success(this.responseText, this.status, xhr);
+                            let done = request.finalize.getCallbacks().done;
+                            if (isFunction(done)) done(this.responseText, this.status, xhr);
+
+                            pushToResponseStack(request.id, {
+                                url: request.url,
+                                method: request.method,
+                                response: this.responseText,
+                                message: 'successful',
+                                xhr: xhr,
+                                status: this.status,
+                                statusText: this.statusText
+                            });
                         }
 
-                        if (isFunction(request.complete)) request.complete(xhttp, this.status);
+                        if (state === true || this.readyState === 0) {
+
+                            if (isFunction(request.complete)) request.complete(this.responseText, xhr, this.status);
+                            let always = request.finalize.getCallbacks().always;
+                            if (isFunction(always)) always(this.responseText, xhr, this.status);
+
+                            if (queue.length === getLastDispatchedIndex() && isFunction(requestQueue.finally)) {
+                                requestQueue.finally(requestQueue.responseStack);
+                                requestQueue.responseStack = {};
+                            }
+                        }
 
                     };
 
-                    xhttp.onloadend = function () {
+                    xhr.onloadend = function () {
                         setPermitNetwork(true);
                         if (isBoolean(request['persist']) && request['persist'] === true) push(request);
-                        let _tm = setTimeout(() => {
-                            if (queue.length > 0) send(shift());
-                            clearTimeout(_tm);
+                        let timer = setTimeout(() => {
+                            let index = getLastDispatchedIndex();
+                            if (queue.length > index) {
+                                dispatch(queue[getLastDispatchedIndex()]);
+                            }
+                            clearTimeout(timer);
                         }, 1000);
                     };
 
-                    if (isNumeric(request.timeout)) xhttp.timeout = parseInt(request.timeout);
+                    if (isNumeric(request.timeout)) xhr.timeout = parseInt(request.timeout);
 
-                    if (isFunction(request.ontimeout)) xhttp.ontimeout = request.ontimeout;
+                    if (isFunction(request.ontimeout)) {
+                        xhr.ontimeout = function () {
+                            request.ontimeout(arguments);
+                            pushToResponseStack(request.id, {
+                                url: request.url,
+                                method: request.method,
+                                response: null,
+                                message: 'timed out',
+                                xhr: xhr,
+                                status: null,
+                                statusText: null
+                            });
+                        };
+                    }
 
-                    if (isFunction(request.error)) xhttp.onerror = request.error;
+                    if (isFunction(request.error)) {
+                        xhr.onerror = function () {
+                            request.error(arguments);
+                            pushToResponseStack(request.id, {
+                                url: request.url,
+                                method: request.method,
+                                response: null,
+                                message: 'error occurred',
+                                xhr: xhr,
+                                status: null,
+                                statusText: null
+                            });
+                        };
+                    }
 
-                    if (isFunction(request.abort)) xhttp.onabort = request.abort;
+                    if (isFunction(request.abort)) {
+                        xhr.onabort = function () {
+                            request.abort(arguments);
+                            pushToResponseStack(request.id, {
+                                url: request.url,
+                                method: request.method,
+                                response: null,
+                                message: 'aborted',
+                                xhr: xhr,
+                                status: null,
+                                statusText: null
+                            });
+                        };
+                    }
 
-                    if (isFunction(request.cancel)) xhttp.oncancel = request.cancel;
+                    if (isFunction(request.cancel)) {
+                        xhr.oncancel = function () {
+                            request.cancel(arguments);
+                            pushToResponseStack(request.id, {
+                                url: request.url,
+                                method: request.method,
+                                response: null,
+                                message: 'cancelled',
+                                xhr: xhr,
+                                status: null,
+                                statusText: null
+                            });
+                        };
+                    }
 
-                    xhttp.msCaching = (isBoolean(request.cache) ? request.cache : false);
+                    xhr.msCaching = (isBoolean(request.cache) ? request.cache : false);
 
-                    xhttp.open(
+                    xhr.open(
                         request.method,
                         (request.method.toUpperCase() === 'GET' && !isUndefined(request.data)) ?
                             encodeURI((request.url + "?" + serialize(request.data))) : request.url,
@@ -245,53 +446,119 @@ NetBridge = (function() {
                         (isString(request.password) ? request.password : ""),
                     );
 
-                    if (isFunction(request.xhr)) request.xhr(xhttp);
+                    if (isFunction(request.xhr)) request.xhr(xhr);
 
                     if (isBoolean(request.contentType) && request.contentType === false) {
-                        xhttp.withCredentials = true;
+                        xhr.withCredentials = true;
                     } else {
-                        xhttp.setRequestHeader("Content-Type", isString(request.contentType) ?
+                        xhr.setRequestHeader("Content-Type", isString(request.contentType) ?
                             request.contentType : "application/x-www-form-urlencoded; charset=UTF-8");
                     }
 
-                    xhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 
                     if (isFunction(request.headers)) request.headers = request.headers();
 
                     if (isObject(request.headers)) {
                         for (let x in request.headers) {
                             if (request.headers.hasOwnProperty(x))
-                                xhttp.setRequestHeader(x, request.headers[x]);
+                                xhr.setRequestHeader(x, request.headers[x]);
                         }
                     }
 
                     if (isFunction(request.data)) request.data = request.data();
 
-                    xhttp.send((isBoolean(request.processData) &&
+                    if (isString(request.dataType)) xhr.responseType = request.dataType;
+
+                    xhr.send((isBoolean(request.processData) &&
                     request.processData === false ? request.data : serialize(request.data)));
 
                 };
 
-            if (queue.length > 0) send(shift());
+            if (isObject(request)) {
+                dispatch(request);
+                return;
+            }
+
+            let lastIndex = getLastDispatchedIndex();
+            if (queue.length > lastIndex) dispatch(queue[lastIndex]);
         };
 
         /**
          *
-         * @param queue
+         * @param request
+         * @return {null|Finalize}
          */
-        this.addToRequestQueue = (queue) => {
+        this.addToRequestQueue = (request) => {
 
             let size = this.getRequestQueue().length, network = getPermitNetwork();
-            if (!isObject(queue)) throw "NetBridge expects an object from its parameter, but got " + getType(queue);
-            if (isUndefined(queue.url)) throw "NetBridge expects a 'url' attribute from the passed object";
-            if (!isString(queue.url)) throw "NetBridge expects the 'url' attribute to be a string, but got " + getType(queue.url);
-            if (isUndefined(queue.method)) throw "NetBridge expects a 'method' attribute from the passed object";
-            if (!isString(queue.method)) throw "NetBridge expects the 'method' attribute to be a string, but got " + getType(queue.method);
-            if (isInRequestQueue(queue)) return;
-            if (!network && isFunction(queue.queue)) queue.queue();
-            push(queue);
-            if (size <= 0) sendRequest();
+            if (!isObject(request)) throw "NetBridge's 'addToRequestQueue' method expects an object from its parameter, but got " + getType(request);
+            if (isUndefined(request.url)) throw "NetBridge's 'addToRequestQueue' method expects a 'url' attribute from the passed object";
+            if (!isString(request.url)) throw "NetBridge's 'addToRequestQueue' method expects the 'url' attribute to be a string, but got " + getType(request.url);
+            if (isUndefined(request.method)) throw "NetBridge's 'addToRequestQueue' method expects a 'method' attribute from the passed object";
+            if (!isString(request.method)) throw "NetBridge's 'addToRequestQueue' method expects the 'method' attribute to be a string, but got " + getType(request.method);
 
+            if (isKeyInRequestQueue(request.id)) {
+                console.warn("Duplicate ID '" + request.id + "' found in request object passed for queueing but not queued");
+                return null;
+            }
+
+            if (isInRequestQueue(request)) {
+                console.warn("Duplicate request object passed for queueing but not queued");
+                return null;
+            }
+
+            if (!network && isFunction(request.queue)) request.queue();
+
+            let finalize = new Finalize();
+            request.finalize = finalize;
+
+            request.id = (!isUndefined(request.id) ? request.id : size);
+
+            push(request);
+
+            if (network) startDispatcher();
+
+            return finalize;
+        };
+
+        /**
+         *
+         * @param id
+         * @param request
+         * @return {null|Finalize}
+         */
+        this.reDispatch = (id, request) => {
+
+            let _request = this.getRequestQueue(), size = _request.length;
+
+            for (let i = 0; i < size; i++) {
+
+                let queue = _request[i];
+
+                if (queue.id === id) {
+
+                    if (isObject(request)) {
+                        for (let key in request) {
+                            if (key === 'id' || key === 'finalize') continue;
+                            if (!request.hasOwnProperty(key)) continue;
+                            queue[key] = request[key];
+                        }
+                        requestQueue.queue[i] = queue;
+                    }
+
+                    startDispatcher(queue);
+                    return queue.finalize;
+                }
+
+            }
+
+            return null;
+
+        };
+
+        this.finally = (callback) => {
+            requestQueue.finally = callback;
         };
     };
 
