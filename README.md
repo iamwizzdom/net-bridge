@@ -113,11 +113,11 @@ to queue up requests that are to be dispatched synchronously, making network cal
 
 > The NetBridge instance also has 3 more methods, which are `getRequestQueue()`, `finally(...)` and `reDispatch(..., ...)`
 
-- getRequestQueue() - This method returns a list of all queue requests.
+- `getRequestQueue()` - This method returns a list of all queue requests.
 
 - `finally(...)` -  This method is ran each time all the request in the request queue has been dispatched. The method takes a function as an argument, this function would receive a stack of all response data from all recently dispatched request.
 
-- reDispatch(..., ...) - This method is used to re-dispatch a previously queued request using the request `id`. The method takes 2 params as an argument, the first param defines the `id` of the request to be re-dispatched, while the second optional param takes an object containing attribute to be overridden in the previous request.
+- `reDispatch(..., ...)` - This method is used to re-dispatch a previously queued request using the request `id`. The method takes 2 params as an argument, the first param defines the `id` of the request to be re-dispatched, while the second optional param takes an object containing attribute to be overridden in the previous request.
 
 
 <h3 id="installation">Installing NetBridge</h3>
