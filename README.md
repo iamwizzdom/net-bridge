@@ -3,7 +3,7 @@
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
 
 - [Usage](#usage)
-- [Attributes](#attributes)
+- [Attributes and Methods](#attributes)
 - [Installation](#installation)
 
 <h2 id="usage"> Usage </h2>
@@ -59,7 +59,7 @@ instance.addToRequestQueue({
 > `NetBridge.getInstance()` returns a singleton from which you can use the `addToRequestQueue(...)` method
 to queue up requests that are to be dispatched synchronously, making network calls easier on your browser.
 
-<h2 id="attributes"> Attributes </h2>
+<h2 id="attributes"> Attributes and Methods </h2>
 
 > NetBridge accepts similar attributes as the regular JQuery `$.ajax` method.
 
