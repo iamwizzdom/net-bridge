@@ -110,7 +110,7 @@ to queue up requests that are to be dispatched synchronously, making network cal
 
 - `always(...)` - This method is similar to the `complete` attribute mentioned above. It takes a function as an argument, in which is to receive the params as the `complete` function.
 
-> The NetBridge instance also has 3 more methods, which are `getRequestQueue()`, `finally(...)` and `reDispatch(..., ...)
+> The NetBridge instance also has 3 more methods, which are `getRequestQueue()`, `finally(...)` and `reDispatch(..., ...)`
 
 - getRequestQueue() - This method returns a list of all queue requests.
 
