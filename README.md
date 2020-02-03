@@ -4,6 +4,7 @@
 
 - [Usage](#usage)
 - [Attributes](#attributes)
+- [Installation](#installation)
 
 <h2 id="usage"> Usage </h2>
 
@@ -119,7 +120,7 @@ to queue up requests that are to be dispatched synchronously, making network cal
 - reDispatch(..., ...) - This method is used to re-dispatch a previously queued request using the request `id`. The method takes 2 params as an argument, the first param defines the `id` of the request to be re-dispatched, while the second optional param takes an object containing attribute to be overridden in the previous request.
 
 
-<h3>Installing NetBridge</h3>
+<h3 id="installation">Installing NetBridge</h3>
 
 NetBridge can be install via [npm](https://www.npmjs.com/)
 
