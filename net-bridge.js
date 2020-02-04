@@ -131,7 +131,7 @@ NetBridge = (function () {
         /**
          *
          * @param request
-         * @returns {boolean}
+         * @return {boolean|number}
          */
         const isInRequestQueue = (request) => {
             let requestQueue = this.getRequestQueue(),
@@ -144,7 +144,7 @@ NetBridge = (function () {
                         request.hasOwnProperty(n))
                         if (queue[n] === request[n]) count++;
                 }
-                if (count === keys) return true;
+                if (count === keys) return x;
             }
             return false;
         };
@@ -152,14 +152,14 @@ NetBridge = (function () {
         /**
          *
          * @param id
-         * @return {boolean}
+         * @return {boolean|number}
          */
         const isKeyInRequestQueue = (id) => {
             let requestQueue = this.getRequestQueue(),
                 size = requestQueue.length;
             for (let x = 0; x < size; x++) {
                 let queue = requestQueue[x];
-                if (queue.id === id) return true;
+                if (queue.id === id) return x;
             }
             return false;
         };
@@ -222,6 +222,13 @@ NetBridge = (function () {
 
         /**
          *
+         * @param index
+         * @return {*[]}
+         */
+        const pop = (index) => requestQueue.queue.splice(index, 1);
+
+        /**
+         *
          * @param key
          * @param response
          */
@@ -244,7 +251,7 @@ NetBridge = (function () {
          */
         this.getRequestQueue = () => requestQueue.queue;
 
-        const startDispatcher = (request = null) => {
+        const dispatcher = (request = null) => {
 
             let queue = this.getRequestQueue(),
 
@@ -457,21 +464,25 @@ NetBridge = (function () {
 
                     xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 
-                    if (isFunction(request.headers)) request.headers = request.headers();
+                    let headers, data;
 
-                    if (isObject(request.headers)) {
-                        for (let x in request.headers) {
-                            if (request.headers.hasOwnProperty(x))
-                                xhr.setRequestHeader(x, request.headers[x]);
+                    if (isFunction(request.headers)) headers = request.headers();
+                    else headers = request.headers;
+
+                    if (isObject(headers)) {
+                        for (let x in headers) {
+                            if (headers.hasOwnProperty(x))
+                                xhr.setRequestHeader(x, headers[x]);
                         }
                     }
 
-                    if (isFunction(request.data)) request.data = request.data();
+                    if (isFunction(request.data)) data = request.data();
+                    else data = request.data;
 
                     if (isString(request.dataType)) xhr.responseType = request.dataType;
 
                     xhr.send((isBoolean(request.processData) &&
-                    request.processData === false ? request.data : serialize(request.data)));
+                    request.processData === false ? data : serialize(data)));
 
                 };
 
@@ -498,14 +509,17 @@ NetBridge = (function () {
             if (isUndefined(request.method)) throw "NetBridge's 'addToRequestQueue' method expects a 'method' attribute from the passed object";
             if (!isString(request.method)) throw "NetBridge's 'addToRequestQueue' method expects the 'method' attribute to be a string, but got " + getType(request.method);
 
-            if (isKeyInRequestQueue(request.id)) {
-                console.warn("Duplicate ID '" + request.id + "' found in request object passed for queueing but not queued");
-                return null;
+            let index;
+
+            if ((index = isKeyInRequestQueue(request.id)) !== false) {
+                pop(index);
+                dispatchIndex--;
+
             }
 
-            if (isInRequestQueue(request)) {
-                console.warn("Duplicate request object passed for queueing but not queued");
-                return null;
+            if ((index = isInRequestQueue(request)) !== false) {
+                pop(index);
+                dispatchIndex--;
             }
 
             if (!network && isFunction(request.queue)) request.queue();
@@ -517,7 +531,7 @@ NetBridge = (function () {
 
             push(request);
 
-            if (network) startDispatcher();
+            if (network) dispatcher();
 
             return finalize;
         };
@@ -547,13 +561,13 @@ NetBridge = (function () {
                         requestQueue.queue[i] = queue;
                     }
 
-                    startDispatcher(queue);
+                    dispatcher(queue);
                     return queue.finalize;
                 }
 
             }
 
-            return null;
+            throw "NetBridge error: Queue ID '" + id + "' was not found in request queue";
 
         };
 
