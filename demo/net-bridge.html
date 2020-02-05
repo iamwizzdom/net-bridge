@@ -109,7 +109,7 @@
 
         setTimeout(() => {
 
-            instance.reDispatch('list-people-3', {url: 'https://swapi.co/api/people/48'})
+            instance.reDispatch('list-people-3', {url: 'https://swapi.co/api/people/46', dataType: "json"})
                 .always(() => {
                     console.log("I am an always func for list-people-3");
                 });

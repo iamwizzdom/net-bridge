@@ -140,9 +140,12 @@ NetBridge = (function () {
                 let queue = requestQueue[x], count = 0,
                     keys = Object.keys(queue).length;
                 for (let n in queue) {
-                    if (queue.hasOwnProperty(n) &&
-                        request.hasOwnProperty(n))
-                        if (queue[n] === request[n]) count++;
+                    if (queue.hasOwnProperty(n) && request.hasOwnProperty(n)) {
+                        if (isFunction(queue[n]) && isFunction(request[n])) count++;
+                        else if (isObject(queue[n]) && isObject(request[n])) count++;
+                        else if (isArray(queue[n]) && isArray(request[n])) count++;
+                        else if (queue[n] === request[n]) count++;
+                    }
                 }
                 if (count === keys) return x;
             }
@@ -251,6 +254,63 @@ NetBridge = (function () {
          */
         this.getRequestQueue = () => requestQueue.queue;
 
+        /**
+         *
+         * @param request
+         * @return {Finalize}
+         */
+        const pushToQueue = (request) => {
+
+            let size = this.getRequestQueue().length, network = getPermitNetwork();
+
+            let index;
+
+            if (!isUndefined(request.id) && (index = isKeyInRequestQueue(request.id)) !== false) {
+
+                pop(index);
+                dispatchIndex--;
+
+            } else if ((index = isInRequestQueue(request)) !== false) {
+
+                pop(index);
+                dispatchIndex--;
+            }
+
+            if (!network && isFunction(request.queue)) request.queue();
+
+
+            if (isUndefined(request.finalize))
+                request.finalize = new Finalize();
+
+            request.id = (!isUndefined(request.id) ? request.id : size);
+
+            push(request);
+
+            if (network) dispatcher();
+
+            return request.finalize;
+        };
+
+        /**
+         *
+         * @param request
+         * @return {Finalize}
+         */
+        this.addToRequestQueue = (request) => {
+
+            if (!isObject(request)) throw "NetBridge's 'addToRequestQueue' method expects an object from its parameter, but got " + getType(request);
+            if (isUndefined(request.url)) throw "NetBridge's 'addToRequestQueue' method expects a 'url' attribute from the passed object";
+            if (!isString(request.url)) throw "NetBridge's 'addToRequestQueue' method expects the 'url' attribute to be a string, but got " + getType(request.url);
+            if (isUndefined(request.method)) throw "NetBridge's 'addToRequestQueue' method expects a 'method' attribute from the passed object";
+            if (!isString(request.method)) throw "NetBridge's 'addToRequestQueue' method expects the 'method' attribute to be a string, but got " + getType(request.method);
+
+            return pushToQueue(request);
+        };
+
+        /**
+         *
+         * @param request
+         */
         const dispatcher = (request = null) => {
 
             let queue = this.getRequestQueue(),
@@ -286,7 +346,7 @@ NetBridge = (function () {
 
                         if (this.readyState === 0) {
                             console.error("NetBridge error: request not initialized (URL:: " + request.url + ")");
-                            if (isFunction(request.error)) request.error(this.responseText, xhr, this.status, this.statusText);
+                            if (isFunction(request.error)) request.error((!isEmpty(this.responseType) && this.responseType !== 'text' ? this.response : (this.responseXML ? this.responseXML : this.responseText)), xhr, this.status, this.statusText);
 
                             pushToResponseStack(request.id, {
                                 url: request.url,
@@ -321,14 +381,14 @@ NetBridge = (function () {
                         if (state === true && this.status !== 200) {
 
                             console.error("NetBridge error: " + this.statusText + " - " + this.status + " (URL:: " + request.url + ")");
-                            if (isFunction(request.error)) request.error(this.responseText, xhr, this.status, this.statusText);
+                            if (isFunction(request.error)) request.error((!isEmpty(this.responseType) && this.responseType !== 'text' ? this.response : (this.responseXML ? this.responseXML : this.responseText)), xhr, this.status, this.statusText);
                             let fail = request.finalize.getCallbacks().fail;
-                            if (isFunction(fail)) fail(this.responseText, xhr, this.status, this.statusText);
+                            if (isFunction(fail)) fail((!isEmpty(this.responseType) && this.responseType !== 'text' ? this.response : (this.responseXML ? this.responseXML : this.responseText)), xhr, this.status, this.statusText);
 
                             pushToResponseStack(request.id, {
                                 url: request.url,
                                 method: request.method,
-                                response: this.responseText,
+                                response: (!isEmpty(this.responseType) && this.responseType !== 'text' ? this.response : (this.responseXML ? this.responseXML : this.responseText)),
                                 message: 'failed',
                                 xhr: xhr,
                                 status: this.status,
@@ -339,14 +399,14 @@ NetBridge = (function () {
 
                         if (state === true && status === true) {
 
-                            if (isFunction(request.success)) request.success(this.responseText, this.status, xhr);
+                            if (isFunction(request.success)) request.success((!isEmpty(this.responseType) && this.responseType !== 'text' ? this.response : (this.responseXML ? this.responseXML : this.responseText)), this.status, xhr);
                             let done = request.finalize.getCallbacks().done;
-                            if (isFunction(done)) done(this.responseText, this.status, xhr);
+                            if (isFunction(done)) done((!isEmpty(this.responseType) && this.responseType !== 'text' ? this.response : (this.responseXML ? this.responseXML : this.responseText)), this.status, xhr);
 
                             pushToResponseStack(request.id, {
                                 url: request.url,
                                 method: request.method,
-                                response: this.responseText,
+                                response: (!isEmpty(this.responseType) && this.responseType !== 'text' ? this.response : (this.responseXML ? this.responseXML : this.responseText)),
                                 message: 'successful',
                                 xhr: xhr,
                                 status: this.status,
@@ -356,9 +416,9 @@ NetBridge = (function () {
 
                         if (state === true || this.readyState === 0) {
 
-                            if (isFunction(request.complete)) request.complete(this.responseText, xhr, this.status);
+                            if (isFunction(request.complete)) request.complete((!isEmpty(this.responseType) && this.responseType !== 'text' ? this.response : (this.responseXML ? this.responseXML : this.responseText)), xhr, this.status);
                             let always = request.finalize.getCallbacks().always;
-                            if (isFunction(always)) always(this.responseText, xhr, this.status);
+                            if (isFunction(always)) always((!isEmpty(this.responseType) && this.responseType !== 'text' ? this.response : (this.responseXML ? this.responseXML : this.responseText)), xhr, this.status);
 
                             if (queue.length === getLastDispatchedIndex() && isFunction(requestQueue.finally)) {
                                 requestQueue.finally(requestQueue.responseStack);
@@ -479,7 +539,7 @@ NetBridge = (function () {
                     if (isFunction(request.data)) data = request.data();
                     else data = request.data;
 
-                    if (isString(request.dataType)) xhr.responseType = request.dataType;
+                    if (isString(request.dataType)) xhr.responseType = request.dataType.toLowerCase();
 
                     xhr.send((isBoolean(request.processData) &&
                     request.processData === false ? data : serialize(data)));
@@ -497,74 +557,27 @@ NetBridge = (function () {
 
         /**
          *
-         * @param request
-         * @return {null|Finalize}
-         */
-        this.addToRequestQueue = (request) => {
-
-            let size = this.getRequestQueue().length, network = getPermitNetwork();
-            if (!isObject(request)) throw "NetBridge's 'addToRequestQueue' method expects an object from its parameter, but got " + getType(request);
-            if (isUndefined(request.url)) throw "NetBridge's 'addToRequestQueue' method expects a 'url' attribute from the passed object";
-            if (!isString(request.url)) throw "NetBridge's 'addToRequestQueue' method expects the 'url' attribute to be a string, but got " + getType(request.url);
-            if (isUndefined(request.method)) throw "NetBridge's 'addToRequestQueue' method expects a 'method' attribute from the passed object";
-            if (!isString(request.method)) throw "NetBridge's 'addToRequestQueue' method expects the 'method' attribute to be a string, but got " + getType(request.method);
-
-            let index;
-
-            if ((index = isKeyInRequestQueue(request.id)) !== false) {
-                pop(index);
-                dispatchIndex--;
-
-            }
-
-            if ((index = isInRequestQueue(request)) !== false) {
-                pop(index);
-                dispatchIndex--;
-            }
-
-            if (!network && isFunction(request.queue)) request.queue();
-
-            let finalize = new Finalize();
-            request.finalize = finalize;
-
-            request.id = (!isUndefined(request.id) ? request.id : size);
-
-            push(request);
-
-            if (network) dispatcher();
-
-            return finalize;
-        };
-
-        /**
-         *
          * @param id
-         * @param request
+         * @param override
          * @return {null|Finalize}
          */
-        this.reDispatch = (id, request) => {
+        this.reDispatch = (id, override) => {
 
-            let _request = this.getRequestQueue(), size = _request.length;
+            let index, request;
 
-            for (let i = 0; i < size; i++) {
+            if ((index = isKeyInRequestQueue(id)) !== false) {
 
-                let queue = _request[i];
+                request = requestQueue.queue[index];
 
-                if (queue.id === id) {
-
-                    if (isObject(request)) {
-                        for (let key in request) {
-                            if (key === 'id' || key === 'finalize') continue;
-                            if (!request.hasOwnProperty(key)) continue;
-                            queue[key] = request[key];
-                        }
-                        requestQueue.queue[i] = queue;
+                if (override && isObject(override)) {
+                    for (let key in override) {
+                        if (key === 'id' || key === 'finalize') continue;
+                        if (!override.hasOwnProperty(key)) continue;
+                        request[key] = override[key];
                     }
-
-                    dispatcher(queue);
-                    return queue.finalize;
                 }
 
+                return pushToQueue(request);
             }
 
             throw "NetBridge error: Queue ID '" + id + "' was not found in request queue";
