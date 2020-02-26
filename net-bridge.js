@@ -443,8 +443,11 @@ NetBridge = (function () {
                     if (isNumeric(request.timeout)) xhr.timeout = parseInt(request.timeout);
 
                     if (isFunction(request.ontimeout)) {
+
                         xhr.ontimeout = function () {
-                            request.ontimeout(arguments);
+
+                            request.ontimeout(...arguments);
+
                             pushToResponseStack(request.id, {
                                 url: request.url,
                                 method: request.method,
@@ -454,12 +457,25 @@ NetBridge = (function () {
                                 status: null,
                                 statusText: null
                             });
+
+                            if (isFunction(request.complete)) request.complete(null, xhr, null);
+                            let always = request.finalize.getCallbacks().always;
+                            if (isFunction(always)) always(null, xhr, null);
+
+                            if (queue.length === getLastDispatchedIndex() && isFunction(requestQueue.finally)) {
+                                requestQueue.finally(requestQueue.responseStack);
+                                requestQueue.responseStack = {};
+                            }
+
                         };
                     }
 
                     if (isFunction(request.error)) {
+
                         xhr.onerror = function () {
-                            request.error(arguments);
+
+                            request.error(...arguments);
+
                             pushToResponseStack(request.id, {
                                 url: request.url,
                                 method: request.method,
@@ -469,12 +485,25 @@ NetBridge = (function () {
                                 status: null,
                                 statusText: null
                             });
+
+                            if (isFunction(request.complete)) request.complete(null, xhr, null);
+                            let always = request.finalize.getCallbacks().always;
+                            if (isFunction(always)) always(null, xhr, null);
+
+                            if (queue.length === getLastDispatchedIndex() && isFunction(requestQueue.finally)) {
+                                requestQueue.finally(requestQueue.responseStack);
+                                requestQueue.responseStack = {};
+                            }
                         };
+
                     }
 
                     if (isFunction(request.abort)) {
+
                         xhr.onabort = function () {
-                            request.abort(arguments);
+
+                            request.abort(...arguments);
+
                             pushToResponseStack(request.id, {
                                 url: request.url,
                                 method: request.method,
@@ -484,12 +513,24 @@ NetBridge = (function () {
                                 status: null,
                                 statusText: null
                             });
+
+                            if (isFunction(request.complete)) request.complete(null, xhr, null);
+                            let always = request.finalize.getCallbacks().always;
+                            if (isFunction(always)) always(null, xhr, null);
+
+                            if (queue.length === getLastDispatchedIndex() && isFunction(requestQueue.finally)) {
+                                requestQueue.finally(requestQueue.responseStack);
+                                requestQueue.responseStack = {};
+                            }
                         };
                     }
 
                     if (isFunction(request.cancel)) {
+
                         xhr.oncancel = function () {
-                            request.cancel(arguments);
+
+                            request.cancel(...arguments);
+
                             pushToResponseStack(request.id, {
                                 url: request.url,
                                 method: request.method,
@@ -499,6 +540,15 @@ NetBridge = (function () {
                                 status: null,
                                 statusText: null
                             });
+
+                            if (isFunction(request.complete)) request.complete(null, xhr, null);
+                            let always = request.finalize.getCallbacks().always;
+                            if (isFunction(always)) always(null, xhr, null);
+
+                            if (queue.length === getLastDispatchedIndex() && isFunction(requestQueue.finally)) {
+                                requestQueue.finally(requestQueue.responseStack);
+                                requestQueue.responseStack = {};
+                            }
                         };
                     }
 
