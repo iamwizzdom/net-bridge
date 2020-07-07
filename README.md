@@ -8,7 +8,7 @@
 
 <h2 id="usage"> Usage </h2>
 
-```
+```javascript
 let instance = NetBridge.getInstance();
 
 instance.addToRequestQueue({
