@@ -1,4 +1,4 @@
-# NetBridge - NetBridge is used for making synchronous network (ajax) calls on web applications.
+# NetBridge - NetBridge is used for making asynchronous network (ajax) calls on web applications.
 
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
 
@@ -57,7 +57,7 @@ instance.addToRequestQueue({
 ```
 
 > `NetBridge.getInstance()` returns a singleton from which you can use the `addToRequestQueue(...)` method
-to queue up requests that are to be dispatched synchronously, making network calls easier on your browser.
+to queue up requests that are to be dispatched asynchronously, making network calls easier on your browser.
 
 <h2 id="attributes"> Attributes and Methods </h2>
 
