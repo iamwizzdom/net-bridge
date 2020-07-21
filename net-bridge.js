@@ -3,7 +3,7 @@
  * Description: NetBridge is used for making synchronous network (ajax) calls on web applications.
  * Author: Wisdom Emenike
  * License: MIT
- * Version: 1.4
+ * Version: 1.5
  * GitHub: https://github.com/iamwizzdom/net-bridge
  */
 
