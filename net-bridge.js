@@ -102,8 +102,25 @@ NetBridge = (function () {
          * @param variable
          * @return {boolean}
          */
-        const isEmpty = (variable) => variable === false || variable === null ||
-            variable.toString() === "0" || variable.toString() === "" || variable.toString() === " ";
+        const isEmpty = (variable) => {
+
+            if (Array.isArray(variable)) return variable.length < 1;
+
+            if (isObject(variable)) return Object.keys(variable) < 1;
+
+            let string = '';
+
+            return (
+                variable === false
+                || variable === null
+                || variable === undefined
+                || typeof variable === "undefined"
+                || (string = variable.toString()) === "null"
+                || string === "0"
+                || string === ""
+                || string === " "
+            );
+        };
 
         /**
          *
@@ -120,9 +137,10 @@ NetBridge = (function () {
         const serialize = (object) => {
             let list = [], x;
             for (x in object) {
-                if (object.hasOwnProperty(x)) {
+                if (!isEmpty(x) && object.hasOwnProperty(x)) {
                     list[list.length] = encodeURIComponent(x) + "=" + encodeURIComponent(
-                        null == object[x] ? "" : object[x]);
+                        isEmpty(object[x]) ? "" : object[x]
+                    );
                 }
             }
             return list.join('&');
