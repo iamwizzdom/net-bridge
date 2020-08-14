@@ -17,7 +17,7 @@ instance.addToRequestQueue({
     data: {
         userID: 2
     },
-    dataType: 'JSON'
+    dataType: 'JSON',
     queue: function () {
         console.log('comment', 'I am a post request and am waiting');
     },

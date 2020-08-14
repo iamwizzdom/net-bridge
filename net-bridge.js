@@ -169,6 +169,36 @@ NetBridge = (function () {
 
         /**
          *
+         * @param url
+         * @param params
+         * @return {string}
+         */
+        const mergeUrlParams = (url, params) => {
+            let urlParams = getSearchParameters(url);
+            if (params && isObject(params)) urlParams = {...urlParams, ...params};
+            return url.split('?')[0] + (urlParams ? "?" + serialize(urlParams) : '');
+        };
+
+        /**
+         *
+         * @param url
+         * @return {{}}
+         */
+        const getSearchParameters = (url) => {
+            let params = {};
+            let parser = document.createElement('a');
+            parser.href = url;
+            let query = parser.search.substring(1);
+            let queries = query.split('&');
+            for (let i = 0; i < queries.length; i++) {
+                let pair = queries[i].split('=');
+                params[pair[0]] = decodeURIComponent(pair[1]);
+            }
+            return params;
+        };
+
+        /**
+         *
          * @constructor
          */
         let Finalize = function() {
@@ -557,7 +587,7 @@ NetBridge = (function () {
                     xhr.open(
                         request.method,
                         (request.method.toUpperCase() === 'GET' && !isUndefined(request.data)) ?
-                            encodeURI((request.url + "?" + serialize(request.data))) : request.url,
+                            encodeURI(mergeUrlParams(request.url,  request.data)) : request.url,
                         (isBoolean(request.async) ? request.async : true),
                         (isString(request['username']) ? request['username'] : ""),
                         (isString(request.password) ? request.password : ""),
