@@ -116,7 +116,6 @@ NetBridge = (function () {
                 || variable === undefined
                 || typeof variable === "undefined"
                 || (string = variable.toString()) === "null"
-                || string === "0"
                 || string === ""
                 || string === " "
             );
