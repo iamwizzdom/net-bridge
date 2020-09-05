@@ -104,7 +104,7 @@ NetBridge = (function () {
          */
         const isEmpty = (variable) => {
 
-            if (Array.isArray(variable)) return variable.length < 1;
+            if (isArray(variable)) return variable.length < 1;
 
             if (isObject(variable)) return Object.keys(variable) < 1;
 
@@ -136,7 +136,7 @@ NetBridge = (function () {
             for (x in object) {
                 if (!isEmpty(x) && object.hasOwnProperty(x)) {
                     list[list.length] = encodeURIComponent(x) + "=" + encodeURIComponent(
-                        isEmpty(object[x]) ? "" : object[x]
+                        !isEmpty(object[x]) ? (isArray(object[x]) || isObject(object[x]) ? JSON.stringify(object[x]) : object[x]) : ""
                     );
                 }
             }
