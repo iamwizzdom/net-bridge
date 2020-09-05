@@ -1,6 +1,6 @@
 /**
  * Name: NetBridge
- * Description: NetBridge is used for making synchronous network (ajax) calls on web applications.
+ * Description: NetBridge is used for making asynchronous network (ajax) calls on web applications.
  * Author: Wisdom Emenike
  * License: MIT
  * Version: 1.8
@@ -678,7 +678,7 @@ NetBridge = (function () {
                 return pushToQueue(request);
             }
 
-            throw "NetBridge error: Queue ID '" + id + "' was not found in request queue";
+            throw `NetBridge error: Queue ID '${id}' was not found in request queue`;
 
         };
 
