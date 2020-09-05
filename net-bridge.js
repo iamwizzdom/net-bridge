@@ -111,13 +111,11 @@ NetBridge = (function () {
             let string = '';
 
             return (
-                variable === false
+                variable === undefined
                 || variable === null
-                || variable === undefined
                 || typeof variable === "undefined"
-                || (string = variable.toString()) === "null"
-                || string === ""
-                || string === " "
+                || (string = variable.toString()) === ""
+                || string.trim() === " "
             );
         };
 
